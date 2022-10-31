@@ -1,9 +1,8 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const Application());
+  runApp(Application());
 }
 
 final Map<int, String> _surahIndex = {
@@ -124,12 +123,12 @@ final Map<int, String> _surahIndex = {
 };
 
 class Application extends StatelessWidget {
-  const Application({super.key});
+  Application({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Quranic Chapter Index Quiz',
+    return MaterialApp(
+      title: 'Surah Index Quiz',
       debugShowCheckedModeBanner: false,
       home: Homepage(),
     );
@@ -137,7 +136,7 @@ class Application extends StatelessWidget {
 }
 
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  Homepage({super.key});
 
   @override
   State<Homepage> createState() {
@@ -148,20 +147,29 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _counter = 1;
   int _correct = 0;
-  int _surah = Random().nextInt(_surahIndex.length + 1) + 1;
+  int? _surah;
   final List<int> _taken = [];
   final fieldController = TextEditingController();
+  late FocusNode focusNode;
 
+  @override
+  void initState() {
+    super.initState();
+    _surah = _getSurah;
+    focusNode = FocusNode();
+  }
+  
   @override
   void dispose() {
     super.dispose();
     // Clean up the controller when the widget is disposed.
     fieldController.dispose();
+    focusNode.dispose();
   }
 
   // Todo refer
   int get _getSurah {
-    var i = Random().nextInt(_surahIndex.length + 1) + 1;
+    var i = Random().nextInt(_surahIndex.length) + 1;
     if (_taken.contains(i)) {
       return _getSurah;
     } else {
@@ -169,12 +177,67 @@ class _HomepageState extends State<Homepage> {
       return i;
     }
   }
+  
+  void _eval() {
+    final val = fieldController.text;
+    print(val);
+    final String answer;
+    if (val == "$_surah") {
+      answer = "True";
+      _correct++;
+    } else {
+      answer = "False";
+    }
+    // final answer = "$_surah" == val ? "True" : "False";
+    final snackBar = SnackBar(
+      content: Text(
+        answer,
+        style: TextStyle(
+            color: Theme.of(context).colorScheme.surface),
+      ),
+      action: SnackBarAction(
+        textColor: Theme.of(context).colorScheme.surface,
+        label: 'Close',
+        onPressed: () {},
+      ),
+    );
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    final String mark = _correct.toString(); // Because showDialog is a Future call...
+    if (_counter > _surahIndex.length) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              content: Text(
+                  "Quiz ended. Your score: $mark/${_surahIndex.length}."));
+        },
+      );
+      // if (kDebugMode) {
+      //   print(_taken);
+      // }
+      setState(() {
+        _correct = 0;
+        _counter = 1;
+        _taken.clear();
+        _surah = _getSurah;
+        fieldController.clear();
+      });
+    } else {
+      setState(() {
+        _counter++;
+        _surah = _getSurah;
+        fieldController.clear();
+        focusNode.requestFocus();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Surah Index Exercise'),
+        title: const Text('Surah Index Quiz'),
       ),
       body: Padding(
         padding: EdgeInsets.all(8),
@@ -184,6 +247,7 @@ class _HomepageState extends State<Homepage> {
               Text(
                 "By Muhammed W Drammeh",
                 style: Theme.of(context).textTheme.headline6,
+                // style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(
                 height: 30,
@@ -194,6 +258,10 @@ class _HomepageState extends State<Homepage> {
               TextField(
                 // Todo use number field
                 controller: fieldController,
+                focusNode: focusNode,
+                onSubmitted: (text) {
+                  _eval();
+                },
               ),
               SizedBox(
                 height: 20,
@@ -201,56 +269,7 @@ class _HomepageState extends State<Homepage> {
               Center(
                 child: ElevatedButton(
                   child: Text("Done"),
-                  onPressed: () {
-                    final val = fieldController.text;
-                    final String answer;
-                    if (val == "$_surah") {
-                      answer = "True";
-                      _correct++;
-                    } else {
-                      answer = "False";
-                    }
-                    // final answer = "$_surah" == val ? "True" : "False";
-                    final snackBar = SnackBar(
-                      content: Text(
-                        answer,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.surface),
-                      ),
-                      action: SnackBarAction(
-                        textColor: Theme.of(context).colorScheme.surface,
-                        label: 'Close',
-                        onPressed: () {},
-                      ),
-                    );
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    final String mark = _correct
-                        .toString(); // Because showDialog is a Future call...
-                    if (_counter > _surahIndex.length) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                              content: Text(
-                                  "Quiz ended. Your score: $mark/${_surahIndex.length}."));
-                        },
-                      );
-                      setState(() {
-                        _correct = 0;
-                        _counter = 1;
-                        _taken.clear();
-                        _surah = _getSurah;
-                        fieldController.clear();
-                      });
-                    } else {
-                      setState(() {
-                        _counter++;
-                        _surah = _getSurah;
-                        fieldController.clear();
-                      });
-                    }
-                  },
+                  onPressed: _eval,
                 ),
               ),
             ]),
