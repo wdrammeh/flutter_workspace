@@ -5,7 +5,7 @@ void main() {
   runApp(Application());
 }
 
-final Map<int, String> _surahIndex = {
+final Map<int, String> _index = {
   1: "Fatiha",
   2: "Baqarah",
   3: "Ali Imran",
@@ -155,45 +155,45 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-    _surah = _getSurah;
+    _surah = _getSurah();
     focusNode = FocusNode();
   }
-  
+
   @override
   void dispose() {
     super.dispose();
-    // Clean up the controller when the widget is disposed.
     fieldController.dispose();
     focusNode.dispose();
   }
 
-  // Todo refer
-  int get _getSurah {
-    var i = Random().nextInt(_surahIndex.length) + 1;
+  // Retrieves a random surah index to be used
+  int _getSurah() {
+    var i = Random().nextInt(_index.length) + 1;
     if (_taken.contains(i)) {
-      return _getSurah;
+      return _getSurah();
     } else {
       _taken.add(i);
       return i;
     }
   }
-  
+
   void _eval() {
     final val = fieldController.text;
-    print(val);
+    final bool correct = val == "$_surah";
     final String answer;
-    if (val == "$_surah") {
+    if (correct) {
       answer = "True";
       _correct++;
     } else {
       answer = "False";
     }
-    // final answer = "$_surah" == val ? "True" : "False";
+
     final snackBar = SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: correct ? Colors.blue : Colors.red,
       content: Text(
         answer,
-        style: TextStyle(
-            color: Theme.of(context).colorScheme.surface),
+        style: TextStyle(color: Theme.of(context).colorScheme.surface),
       ),
       action: SnackBarAction(
         textColor: Theme.of(context).colorScheme.surface,
@@ -203,30 +203,27 @@ class _HomepageState extends State<Homepage> {
     );
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    final String mark = _correct.toString(); // Because showDialog is a Future call...
-    if (_counter > _surahIndex.length) {
+
+    if (_counter > _index.length) {
+      final String mark = _correct.toString(); // Because showDialog is a Future
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-              content: Text(
-                  "Quiz ended. Your score: $mark/${_surahIndex.length}."));
+              content: Text("Quiz ended. Your score: $mark/${_index.length}."));
         },
       );
-      // if (kDebugMode) {
-      //   print(_taken);
-      // }
       setState(() {
         _correct = 0;
         _counter = 1;
         _taken.clear();
-        _surah = _getSurah;
+        _surah = _getSurah();
         fieldController.clear();
       });
     } else {
       setState(() {
         _counter++;
-        _surah = _getSurah;
+        _surah = _getSurah();
         fieldController.clear();
         focusNode.requestFocus();
       });
@@ -237,43 +234,87 @@ class _HomepageState extends State<Homepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Surah Index Quiz'),
+        title: Text('Surah Index Quiz'),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(8),
+      body: Container(
+        padding: EdgeInsets.all(16),
         child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                "By Muhammed W Drammeh",
-                style: Theme.of(context).textTheme.headline6,
-                // style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(
-                height: 30,
-              ),
-              Text(
-                "$_counter. What's the index of Surah ${_surahIndex[_surah]}:",
-              ),
-              TextField(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              "$_counter. What's the index of Surah ${_index[_surah]}?",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: TextField(
                 // Todo use number field
                 controller: fieldController,
                 focusNode: focusNode,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  // labelText: _index[_surah],
+                ),
                 onSubmitted: (text) {
                   _eval();
                 },
               ),
-              SizedBox(
-                height: 20,
+            ),
+            Center(
+              child: ElevatedButton(
+                onPressed: _eval,
+                child: Text("Done"),
               ),
-              Center(
-                child: ElevatedButton(
-                  child: Text("Done"),
-                  onPressed: _eval,
-                ),
-              ),
-            ]),
+            ),
+          ],
+        ),
       ),
+      bottomNavigationBar: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('Surah Index Quiz -- v1'),
+                        content: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Text(
+                                "By Muhammed W. Drammeh",
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                            ),
+                            Text(
+                              'In this exercise, a random surah name will be generated. '
+                              'Do you know its number?',
+                            ),
+                          ],
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, 'Ok');
+                            },
+                            child: Text('OK'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: Text("Muhammed W Drammeh"),
+              ),
+            ],
+          )),
     );
   }
 }
