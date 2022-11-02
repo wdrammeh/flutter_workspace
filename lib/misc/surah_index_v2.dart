@@ -5,6 +5,7 @@ void main() {
   runApp(Application());
 }
 
+final appName = "Surah Index Exercise";
 final Map<int, String> _index = {
   1: "Fatiha",
   2: "Baqarah",
@@ -128,7 +129,7 @@ class Application extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Surah Index Quiz',
+      title: appName,
       debugShowCheckedModeBanner: false,
       home: Homepage(),
     );
@@ -147,39 +148,55 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _counter = 1;
   int _correct = 0;
-  int? _surah;
+  int _surah = Random().nextInt(_index.length) + 1;
   final List<int> _taken = [];
-  final fieldController = TextEditingController();
-  late FocusNode focusNode;
-
+  late List<int> _options;
+  
   @override
   void initState() {
     super.initState();
-    _surah = _getSurah();
-    focusNode = FocusNode();
+    _options = _getOptions();
   }
 
   @override
   void dispose() {
     super.dispose();
-    fieldController.dispose();
-    focusNode.dispose();
   }
 
-  // Retrieves a random surah index to be used
-  int _getSurah() {
+  int _getSurah({add = true}) {
+    assert(_taken.length < _index.length);
+    
     var i = Random().nextInt(_index.length) + 1;
     if (_taken.contains(i)) {
       return _getSurah();
     } else {
-      _taken.add(i);
+      if (add == true) {
+        _taken.add(i);
+      }
       return i;
     }
   }
+  
+  List<int> _getOptions() {
+    final option2 = _getSurah(add: false);
+    
+    // final option3 = _getSurah(except: <int>[option2], add: false);
+    var option3 = Random().nextInt(_index.length) + 1;
+    while (option3 == _surah || option3 == option2) {
+      option3 = Random().nextInt(_index.length) + 1;
+    }
 
-  void _eval() {
-    final val = fieldController.text;
-    final bool correct = val == "$_surah";
+    // final option4 = _getSurah(except: <int>[option2, option3], add: false);
+    var option4 = Random().nextInt(_index.length) + 1;
+    while (option4 == _surah || option4 == option2 || option4 == option3) {
+      option4 = Random().nextInt(_index.length) + 1;
+    }
+    
+    return [_surah, option2, option3, option4];
+  }
+
+  void _eval(int surah) {
+    final bool correct = surah == _surah;
     final String answer;
     if (correct) {
       answer = "True";
@@ -191,12 +208,17 @@ class _HomepageState extends State<Homepage> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     if (_counter > _index.length) {
-      final int mark = _correct; // Because showDialog is a Future
-      _correct = 0;
-      _counter = 1;
-      _taken.clear();
-      _surah = _getSurah();
-      fieldController.clear();
+      // Get a copy of the score somehow... because Navigator.push is a Future
+      final int mark = _correct;
+      
+      setState(() {
+        _taken.clear();
+        _counter = 1;
+        _correct = 0;
+        _surah = _getSurah();
+        _options = _getOptions();
+      });
+      
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
@@ -206,7 +228,7 @@ class _HomepageState extends State<Homepage> {
     } else {
       final snackBar = SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: correct ? Colors.blue : Colors.red,
+        backgroundColor: correct ? Theme.of(context).primaryColor : Colors.red,
         content: Text(
           answer,
           style: TextStyle(color: Theme.of(context).colorScheme.surface),
@@ -223,50 +245,70 @@ class _HomepageState extends State<Homepage> {
       setState(() {
         _counter++;
         _surah = _getSurah();
-        fieldController.clear();
-        focusNode.requestFocus();
+        _options = _getOptions();
       });
     }
+  }
+  
+  Widget _optionTile(val) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 64, vertical: 4),
+      child: ListTile(
+        title: Center(child: Text(val.toString(),),),
+        textColor: Colors.white,
+        onTap: () {
+          _eval(val);
+        },
+      ),
+      decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor,
+          borderRadius: BorderRadius.circular(50)
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    _options.shuffle();
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Surah Index Quiz'),
+        title: Text(appName),
+        actions: [
+          IconButton(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            icon: Icon(Icons.info_outlined),
+            tooltip: 'Learn',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) {
+                  return LearnActivity();
+                }),
+              );
+            },
+          ),
+        ],
       ),
-      body: Container(
-        padding: EdgeInsets.all(16),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              "$_counter. What's the index of Surah ${_index[_surah]}?",
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: TextField(
-                // Todo use number field
-                controller: fieldController,
-                focusNode: focusNode,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  // labelText: _index[_surah],
-                ),
-                onSubmitted: (text) {
-                  _eval();
-                },
+            Container(
+              margin: EdgeInsets.only(bottom: 32),
+              child: Text(
+                "$_counter. What's the index of Surah ${_index[_surah]}?",
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            Center(
-              child: ElevatedButton(
-                onPressed: _eval,
-                child: Text("Done"),
-              ),
-            ),
+            Column(
+              children: [
+                _optionTile(_options[0]),
+                _optionTile(_options[1]),
+                _optionTile(_options[2]),
+                _optionTile(_options[3]),
+              ],
+            )
           ],
         ),
       ),
@@ -276,29 +318,7 @@ class _HomepageState extends State<Homepage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text('Surah Index Quiz -- v1'),
-                        content: Text(
-                          'Developed by Muhammed W Drammeh (md21712494@utg.edu.gm). '
-                          'In this exercise, a random surah name will be generated. '
-                          'Do you know its number?',
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, 'Ok');
-                            },
-                            child: Text('OK'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
+                onPressed: () {},
                 child: Text("Muhammed W Drammeh"),
               ),
             ],
@@ -308,16 +328,16 @@ class _HomepageState extends State<Homepage> {
 }
 
 class CompletedActivity extends StatelessWidget {
-  int _score;
+  final int _mark;
 
-  CompletedActivity(this._score, {super.key});
+  CompletedActivity(this._mark, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Quiz completed",
+          appName,
         ),
       ),
       body: Center(
@@ -332,7 +352,7 @@ class CompletedActivity extends StatelessWidget {
               height: 8,
             ),
             Text(
-              "Your score: ${_score}/${_index.length}",
+              "Your score: ${_mark}/${_index.length}",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Padding(
@@ -347,6 +367,33 @@ class CompletedActivity extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class LearnActivity extends StatelessWidget {
+  LearnActivity({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("Surah Index"),
+        ),
+        body: ListView.builder(
+          itemCount: _index.length,
+          itemBuilder: (context, i) {
+            final int j = i + 1;
+            return ListTile(
+              title: Text(
+                "$j. ${_index[j]}",
+              ),
+              onTap: () {
+                
+              },
+            );
+          },
+        ),
     );
   }
 }
