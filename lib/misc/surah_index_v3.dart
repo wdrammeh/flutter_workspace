@@ -226,26 +226,27 @@ class _NameToNumberState extends State<NameToNumber> {
   int _surah = Random().nextInt(_index.length) + 1;
   final List<int> _taken = [];
   late List<int> _options;
-
-  @override
-  void initState() {
-    super.initState();
+  
+  _NameToNumberState() {
     _options = _getOptions();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  void _resetFields() {
+    _taken.clear();
+    _counter = 1;
+    _correct = 0;
+    _surah = _getSurah();
+    _options = _getOptions();
   }
 
   int _getSurah({add = true}) {
-    assert(_taken.length < _index.length);
+    assert(_taken.length <= _index.length);
 
     var i = Random().nextInt(_index.length) + 1;
     if (_taken.contains(i)) {
-      return _getSurah();
+      return add ? _getSurah() : i;
     } else {
-      if (add == true) {
+      if (add) {
         _taken.add(i);
       }
       return i;
@@ -280,19 +281,11 @@ class _NameToNumberState extends State<NameToNumber> {
       answer = "False";
     }
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
 
-    if (_counter > 10) {
+    if (_counter == _index.length) {
       // Get a copy of the score somehow... because Navigator.push is a Future
       final int mark = _correct;
-
-      setState(() {
-        _taken.clear();
-        _counter = 1;
-        _correct = 0;
-        _surah = _getSurah();
-        _options = _getOptions();
-      });
 
       Navigator.push(
         context,
@@ -300,6 +293,10 @@ class _NameToNumberState extends State<NameToNumber> {
           return CompletedActivity(mark);
         }),
       );
+
+      setState(() {
+        _resetFields();
+      });
     } else {
       final snackBar = SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -382,6 +379,7 @@ class _NameToNumberState extends State<NameToNumber> {
                       onPressed: () {
                         Navigator.pop(context);
                         Navigator.pop(context);
+                        _resetFields();
                       },
                       child: const Text('Yes'),
                     ),
@@ -435,19 +433,12 @@ class _NumberToNameState extends State<NumberToName> {
   final List<int> _taken = [];
   late List<int> _options;
   
-  @override
-  void initState() {
-    super.initState();
+  _NumberToNameState() {
     _options = _getOptions();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   int _getSurah({add = true}) {
-    assert(_taken.length < _index.length);
+    assert(_taken.length <= _index.length);
     
     var i = Random().nextInt(_index.length) + 1;
     if (_taken.contains(i)) {
@@ -478,6 +469,14 @@ class _NumberToNameState extends State<NumberToName> {
     return [_surah, option2, option3, option4];
   }
 
+  _resetFields() {
+    _taken.clear();
+    _counter = 1;
+    _correct = 0;
+    _surah = _getSurah();
+    _options = _getOptions();
+  }
+  
   void _eval(int surah) {
     final bool correct = surah == _surah;
     final String answer;
@@ -488,26 +487,22 @@ class _NumberToNameState extends State<NumberToName> {
       answer = "False";
     }
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
 
-    if (_counter > _index.length) {
+    if (_counter == _index.length) {
       // Get a copy of the score somehow... because Navigator.push is a Future
       final int mark = _correct;
-      
-      setState(() {
-        _taken.clear();
-        _counter = 1;
-        _correct = 0;
-        _surah = _getSurah();
-        _options = _getOptions();
-      });
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
           return CompletedActivity(mark);
         }),
       );
+      
+      setState(() {
+        _resetFields();
+      });
     } else {
       final snackBar = SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -589,6 +584,7 @@ class _NumberToNameState extends State<NumberToName> {
                       onPressed: () {
                         Navigator.pop(context);
                         Navigator.pop(context);
+                        _resetFields();
                       },
                       child: const Text('Yes'),
                     ),
@@ -687,6 +683,13 @@ class LearnActivity extends StatelessWidget {
               title: Text(
                 "$j. ${_index[j]}",
               ),
+              // subtitle: Row(
+              //   children: [
+              //     Text("Makki"),
+              //     SizedBox(width: 5),
+              //     Text("7 verses"),
+              //   ],
+              // ),
               onTap: () {
                 
               },

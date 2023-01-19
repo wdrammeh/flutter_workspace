@@ -5,7 +5,6 @@ void main() {
 }
 
 class HeroApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,7 +15,6 @@ class HeroApp extends StatelessWidget {
 }
 
 class MainScreen extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,14 +23,9 @@ class MainScreen extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) {
-                    return DetailScreen();
-                  }
-              )
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return DetailScreen();
+          }));
         },
         child: Hero(
           tag: 'imageHero',
@@ -46,7 +39,6 @@ class MainScreen extends StatelessWidget {
 }
 
 class DetailScreen extends StatelessWidget {
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
